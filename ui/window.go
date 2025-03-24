@@ -6,12 +6,10 @@ import (
 	"log"
 
 	"golang.org/x/exp/shiny/driver"
-	"golang.org/x/exp/shiny/imageutil"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/image/draw"
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/lifecycle"
-	"golang.org/x/mobile/event/mouse"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 )
@@ -25,15 +23,12 @@ type Visualizer struct {
 	tx   chan screen.Texture
 	done chan struct{}
 
-	sz  size.Event
-	pos image.Rectangle
+	sz size.Event
 }
 
 func (pw *Visualizer) Main() {
 	pw.tx = make(chan screen.Texture)
 	pw.done = make(chan struct{})
-	pw.pos.Max.X = 200
-	pw.pos.Max.Y = 200
 	driver.Main(pw.run)
 }
 
@@ -43,7 +38,9 @@ func (pw *Visualizer) Update(t screen.Texture) {
 
 func (pw *Visualizer) run(s screen.Screen) {
 	w, err := s.NewWindow(&screen.NewWindowOptions{
-		Title: pw.Title,
+		Title:  pw.Title,
+		Width:  800,
+		Height: 800,
 	})
 	if err != nil {
 		log.Fatal("Failed to initialize the app window:", err)
@@ -83,7 +80,6 @@ func (pw *Visualizer) run(s screen.Screen) {
 				return
 			}
 			pw.handleEvent(e, t)
-
 		case t = <-pw.tx:
 			w.Send(paint.Event{})
 		}
@@ -94,11 +90,11 @@ func detectTerminate(e any) bool {
 	switch e := e.(type) {
 	case lifecycle.Event:
 		if e.To == lifecycle.StageDead {
-			return true // Window destroy initiated.
+			return true
 		}
 	case key.Event:
 		if e.Code == key.CodeEscape {
-			return true // Esc pressed.
+			return true
 		}
 	}
 	return false
@@ -106,37 +102,31 @@ func detectTerminate(e any) bool {
 
 func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
 	switch e := e.(type) {
-
-	case size.Event: // Оновлення даних про розмір вікна.
+	case size.Event:
 		pw.sz = e
-
 	case error:
 		log.Printf("ERROR: %s", e)
-
-	case mouse.Event:
-		if t == nil {
-			// TODO: Реалізувати реакцію на натискання кнопки миші.
-		}
-
 	case paint.Event:
-		// Малювання контенту вікна.
-		if t == nil {
-			pw.drawDefaultUI()
-		} else {
-			// Використання текстури отриманої через виклик Update.
-			pw.w.Scale(pw.sz.Bounds(), t, t.Bounds(), draw.Src, nil)
-		}
-		pw.w.Publish()
+		pw.drawUI()
 	}
 }
 
-func (pw *Visualizer) drawDefaultUI() {
-	pw.w.Fill(pw.sz.Bounds(), color.Black, draw.Src) // Фон.
+func (pw *Visualizer) drawUI() {
+	pw.w.Fill(pw.sz.Bounds(), color.White, draw.Src) // Фон білий
+	pw.drawT()
+	pw.w.Publish()
+}
 
-	// TODO: Змінити колір фону та додати відображення фігури у вашому варіанті.
+func (pw *Visualizer) drawT() {
+	size := 200 // Загальний розмір фігури
+	thickness := 50
+	x, y := 400, 400 // Центр фігури
 
-	// Малювання білої рамки.
-	for _, br := range imageutil.Border(pw.sz.Bounds(), 10) {
-		pw.w.Fill(br, color.White, draw.Src)
-	}
+	// Горизонтальна частина "Т"
+	rect1 := image.Rect(x-size/2, y-thickness/2, x+size/2, y+thickness/2)
+	pw.w.Fill(rect1, color.RGBA{0, 0, 255, 255}, draw.Src)
+
+	// Вертикальна частина "Т"
+	rect2 := image.Rect(x-thickness/2, y-thickness/2, x+thickness/2, y+size/2)
+	pw.w.Fill(rect2, color.RGBA{0, 0, 255, 255}, draw.Src)
 }
