@@ -1,6 +1,8 @@
 package main
 
 import (
+	"golang.org/x/exp/shiny/screen"
+	"image"
 	"net/http"
 
 	"github.com/roman-mazur/architecture-lab-3/painter"
@@ -10,17 +12,19 @@ import (
 
 func main() {
 	var (
-		pv ui.Visualizer // Візуалізатор створює вікно та малює у ньому.
+		pv ui.Visualizer
 
-		// Потрібні для частини 2.
-		opLoop painter.Loop // Цикл обробки команд.
-		parser lang.Parser  // Парсер команд.
+		state  painter.State
+		opLoop painter.Loop
+		parser lang.Parser
 	)
 
-	//pv.Debug = true
 	pv.Title = "Simple painter"
+	pv.OnScreenReady = func(s screen.Screen) {
+		state.Texture, _ = s.NewTexture(image.Pt(800, 800))
+		opLoop.Start(s)
+	}
 
-	pv.OnScreenReady = opLoop.Start
 	opLoop.Receiver = &pv
 
 	go func() {

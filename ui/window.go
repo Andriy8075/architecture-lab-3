@@ -10,6 +10,7 @@ import (
 	"golang.org/x/image/draw"
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/lifecycle"
+	"golang.org/x/mobile/event/mouse"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 )
@@ -104,29 +105,37 @@ func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
 	switch e := e.(type) {
 	case size.Event:
 		pw.sz = e
+	case mouse.Event:
+		if e.Button == mouse.ButtonLeft && e.Direction == mouse.DirPress {
+			pw.drawTAt(float64(e.X), float64(e.Y)) // Конвертація float32 до float64
+		}
 	case error:
 		log.Printf("ERROR: %s", e)
 	case paint.Event:
-		pw.drawUI()
+		if t != nil {
+			pw.w.Scale(pw.sz.Bounds(), t, t.Bounds(), draw.Src, nil)
+		}
+		pw.w.Publish()
 	}
 }
 
-func (pw *Visualizer) drawUI() {
-	pw.w.Fill(pw.sz.Bounds(), color.White, draw.Src) // Фон білий
-	pw.drawT()
-	pw.w.Publish()
-}
-
-func (pw *Visualizer) drawT() {
-	size := 200 // Загальний розмір фігури
+func (pw *Visualizer) drawTAt(x, y float64) {
+	size := 200
 	thickness := 50
-	x, y := 400, 400 // Центр фігури
 
-	// Горизонтальна частина "Т"
-	rect1 := image.Rect(x-size/2, y-thickness/2, x+size/2, y+thickness/2)
-	pw.w.Fill(rect1, color.RGBA{0, 0, 255, 255}, draw.Src)
+	// Horizontal part
+	rect1 := image.Rect(
+		int(x)-size/2, int(y)-thickness/2,
+		int(x)+size/2, int(y)+thickness/2,
+	)
+	pw.w.Fill(rect1, color.RGBA{B: 0xff, A: 0xff}, draw.Src)
 
-	// Вертикальна частина "Т"
-	rect2 := image.Rect(x-thickness/2, y-thickness/2, x+thickness/2, y+size/2)
-	pw.w.Fill(rect2, color.RGBA{0, 0, 255, 255}, draw.Src)
+	// Vertical part
+	rect2 := image.Rect(
+		int(x)-thickness/2, int(y)-thickness/2,
+		int(x)+thickness/2, int(y)+size/2,
+	)
+	pw.w.Fill(rect2, color.RGBA{B: 0xff, A: 0xff}, draw.Src)
+
+	pw.w.Publish()
 }
