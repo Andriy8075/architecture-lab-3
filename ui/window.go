@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"golang.org/x/exp/shiny/imageutil"
 	"image"
 	"image/color"
 	"log"
@@ -25,6 +26,7 @@ type Visualizer struct {
 	done chan struct{}
 
 	sz size.Event
+	T  image.Point
 }
 
 func (pw *Visualizer) Main() {
@@ -114,6 +116,8 @@ func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
 	case paint.Event:
 		if t != nil {
 			pw.w.Scale(pw.sz.Bounds(), t, t.Bounds(), draw.Src, nil)
+		} else {
+			pw.drawDefaultUI()
 		}
 		pw.w.Publish()
 	}
@@ -138,4 +142,19 @@ func (pw *Visualizer) drawTAt(x, y float64) {
 	pw.w.Fill(rect2, color.RGBA{B: 0xff, A: 0xff}, draw.Src)
 
 	pw.w.Publish()
+}
+
+func (pw *Visualizer) drawDefaultUI() {
+	pw.w.Fill(pw.sz.Bounds(), color.White, draw.Src) // Фон.
+
+	x, y := pw.T.X, pw.T.Y
+	c := color.RGBA{255, 255, 0, 1}
+
+	pw.w.Fill(image.Rect(x-200, y+80, x+200, y-80), c, draw.Src)
+	pw.w.Fill(image.Rect(x-80, y+200, x+80, y-200), c, draw.Src)
+
+	// Малювання білої рамки.
+	for _, br := range imageutil.Border(pw.sz.Bounds(), 10) {
+		pw.w.Fill(br, color.White, draw.Src)
+	}
 }

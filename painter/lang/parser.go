@@ -2,6 +2,8 @@ package lang
 
 import (
 	"bufio"
+	"fmt"
+	"image"
 	"io"
 	"strconv"
 	"strings"
@@ -9,85 +11,99 @@ import (
 	"github.com/roman-mazur/architecture-lab-3/painter"
 )
 
-type Parser struct{}
+type Parser struct {
+	uistate Uistate
+}
 
 func (p *Parser) Parse(in io.Reader) ([]painter.Operation, error) {
-	var res []painter.Operation
+	p.uistate.ResetOperations()
 
 	scanner := bufio.NewScanner(in)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
 		cmdLine := scanner.Text()
-		if cmdLine == "" {
-			continue
-		}
 
-		fields := strings.Fields(cmdLine)
-		if len(fields) == 0 {
-			continue
-		}
-
-		cmd := fields[0]
-		args := fields[1:]
-
-		switch cmd {
-		case "white":
-			res = append(res, painter.OperationFunc(painter.WhiteFill))
-		case "green":
-			res = append(res, painter.OperationFunc(painter.GreenFill))
-		case "update":
-			res = append(res, painter.UpdateOp)
-		case "bgrect":
-			if len(args) != 4 {
-				println("less than 4 args")
-				continue
-			}
-			println("enough args")
-			x1, err1 := strconv.ParseFloat(args[0], 32)
-			y1, err2 := strconv.ParseFloat(args[1], 32)
-			x2, err3 := strconv.ParseFloat(args[2], 32)
-			y2, err4 := strconv.ParseFloat(args[3], 32)
-			if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
-				println("errors")
-				continue
-			}
-			res = append(res, &painter.BgRect{
-				X1: float32(x1),
-				Y1: float32(y1),
-				X2: float32(x2),
-				Y2: float32(y2),
-			})
-		case "figure":
-			if len(args) != 2 {
-				continue
-			}
-			x, err1 := strconv.ParseFloat(args[0], 32)
-			y, err2 := strconv.ParseFloat(args[1], 32)
-			if err1 != nil || err2 != nil {
-				continue
-			}
-			res = append(res, &painter.TFigure{
-				X: float32(x),
-				Y: float32(y),
-			})
-		case "move":
-			if len(args) != 2 {
-				continue
-			}
-			x, err1 := strconv.ParseFloat(args[0], 32)
-			y, err2 := strconv.ParseFloat(args[1], 32)
-			if err1 != nil || err2 != nil {
-				continue
-			}
-			res = append(res, &painter.Move{
-				X: float32(x),
-				Y: float32(y),
-			})
-		case "reset":
-			res = append(res, &painter.Reset{})
+		err := p.parse(cmdLine)
+		if err != nil {
+			return nil, err
 		}
 	}
 
+	res := p.uistate.GetOperations()
+
 	return res, nil
+}
+
+func (p *Parser) parse(cmdl string) error {
+	words := strings.Split(cmdl, " ")
+	command := words[0]
+
+	switch command {
+	case "white":
+		if len(words) != 1 {
+			return fmt.Errorf("wrong number of arguments for white command")
+		}
+		p.uistate.WhiteBackground()
+	case "green":
+		if len(words) != 1 {
+			return fmt.Errorf("wrong number of arguments for green command")
+		}
+		p.uistate.GreenBackground()
+	case "bgrect":
+		parameters, err := checkForErrorsInParameters(words, 5)
+		if err != nil {
+			return err
+		}
+		p.uistate.BackgroundRectangle(image.Point{X: parameters[0], Y: parameters[1]}, image.Point{X: parameters[2], Y: parameters[3]})
+	case "figure":
+		parameters, err := checkForErrorsInParameters(words, 2)
+		if err != nil {
+			return err
+		}
+		p.uistate.AddTFigure(image.Point{X: parameters[0], Y: parameters[1]})
+	case "move":
+		parameters, err := checkForErrorsInParameters(words, 3)
+		if err != nil {
+			return err
+		}
+		p.uistate.AddMoveOperation(parameters[0], parameters[1])
+	case "reset":
+		if len(words) != 1 {
+			return fmt.Errorf("wrong number of arguments for reset command")
+		}
+		p.uistate.ResetStateAndBackground()
+	case "update":
+		if len(words) != 1 {
+			return fmt.Errorf("wrong number of arguments for update command")
+		}
+		p.uistate.SetUpdateOperation()
+	default:
+		return fmt.Errorf("invalid command %v", words[0])
+	}
+	return nil
+}
+
+func checkForErrorsInParameters(words []string, expected int) ([]int, error) {
+	if len(words) != expected {
+		return nil, fmt.Errorf("wrong number of arguments for '%v' command", words[0])
+	}
+	var command = words[0]
+	var params []int
+	for _, param := range words[1:] {
+		p, err := parseInt(param)
+		if err != nil {
+			return nil, fmt.Errorf("invalid parameter for '%s' command: '%s' is not a number", command, param)
+		}
+		params = append(params, p)
+	}
+	return params, nil
+}
+
+func parseInt(s string) (int, error) {
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, fmt.Errorf("cannot parse float: %s", s)
+	}
+	return int(f * 800), nil
 }
