@@ -1,5 +1,7 @@
 package painter
 
+//unused file in this model of programm
+
 //import (
 //	"image/color"
 //
