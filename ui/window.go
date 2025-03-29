@@ -105,26 +105,6 @@ func detectTerminate(e any) bool {
 	return false
 }
 
-//func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
-//	switch e := e.(type) {
-//	case size.Event:
-//		pw.sz = e
-//	case mouse.Event:
-//		if e.Button == mouse.ButtonLeft && e.Direction == mouse.DirPress {
-//			pw.drawTAt(float64(e.X), float64(e.Y)) // Конвертація float32 до float64
-//		}
-//	case error:
-//		log.Printf("ERROR: %s", e)
-//	case paint.Event:
-//		if t != nil {
-//			pw.w.Scale(pw.sz.Bounds(), t, t.Bounds(), draw.Src, nil)
-//		} else {
-//			pw.drawDefaultUI()
-//		}
-//		pw.w.Publish()
-//	}
-//}
-
 func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
 	switch e := e.(type) {
 

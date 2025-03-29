@@ -72,7 +72,7 @@ func (u *Uistate) BackgroundRectangle(firstPoint image.Point, secondPoint image.
 }
 
 func (u *Uistate) AddTFigure(centralPoint image.Point) {
-	fmt.Println("Додано фігуру в:", centralPoint.X, centralPoint.Y)
+	fmt.Println("Додано фігуру в:", centralPoint.X, centralPoint.Y) // було додано для перевірки
 	figure := painter.TFigure{
 		X: centralPoint.X,
 		Y: centralPoint.Y,
