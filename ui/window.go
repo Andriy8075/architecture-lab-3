@@ -32,6 +32,8 @@ type Visualizer struct {
 func (pw *Visualizer) Main() {
 	pw.tx = make(chan screen.Texture)
 	pw.done = make(chan struct{})
+	pw.T.X = 400
+	pw.T.Y = 400
 	driver.Main(pw.run)
 }
 
@@ -103,21 +105,53 @@ func detectTerminate(e any) bool {
 	return false
 }
 
+//func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
+//	switch e := e.(type) {
+//	case size.Event:
+//		pw.sz = e
+//	case mouse.Event:
+//		if e.Button == mouse.ButtonLeft && e.Direction == mouse.DirPress {
+//			pw.drawTAt(float64(e.X), float64(e.Y)) // Конвертація float32 до float64
+//		}
+//	case error:
+//		log.Printf("ERROR: %s", e)
+//	case paint.Event:
+//		if t != nil {
+//			pw.w.Scale(pw.sz.Bounds(), t, t.Bounds(), draw.Src, nil)
+//		} else {
+//			pw.drawDefaultUI()
+//		}
+//		pw.w.Publish()
+//	}
+//}
+
 func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
 	switch e := e.(type) {
-	case size.Event:
+
+	case size.Event: // Оновлення даних про розмір вікна.
 		pw.sz = e
-	case mouse.Event:
-		if e.Button == mouse.ButtonLeft && e.Direction == mouse.DirPress {
-			pw.drawTAt(float64(e.X), float64(e.Y)) // Конвертація float32 до float64
-		}
+
 	case error:
 		log.Printf("ERROR: %s", e)
+
+	case mouse.Event:
+		if t == nil {
+			if e.Button == mouse.ButtonLeft && e.Direction == mouse.DirPress {
+				pw.T = image.Point{
+					X: int(e.X),
+					Y: int(e.Y),
+				}
+				pw.w.Send(paint.Event{})
+			}
+		}
+
 	case paint.Event:
-		if t != nil {
-			pw.w.Scale(pw.sz.Bounds(), t, t.Bounds(), draw.Src, nil)
-		} else {
+		// Малювання контенту вікна.
+		if t == nil {
 			pw.drawDefaultUI()
+		} else {
+			// Використання текстури отриманої через виклик Update.
+			pw.w.Scale(pw.sz.Bounds(), t, t.Bounds(), draw.Src, nil)
 		}
 		pw.w.Publish()
 	}
@@ -147,11 +181,7 @@ func (pw *Visualizer) drawTAt(x, y float64) {
 func (pw *Visualizer) drawDefaultUI() {
 	pw.w.Fill(pw.sz.Bounds(), color.White, draw.Src) // Фон.
 
-	x, y := pw.T.X, pw.T.Y
-	c := color.RGBA{255, 255, 0, 1}
-
-	pw.w.Fill(image.Rect(x-200, y+80, x+200, y-80), c, draw.Src)
-	pw.w.Fill(image.Rect(x-80, y+200, x+80, y-200), c, draw.Src)
+	pw.drawTAt(float64(pw.T.X), float64(pw.T.Y))
 
 	// Малювання білої рамки.
 	for _, br := range imageutil.Border(pw.sz.Bounds(), 10) {

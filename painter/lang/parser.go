@@ -36,6 +36,7 @@ func (p *Parser) Parse(in io.Reader) ([]painter.Operation, error) {
 }
 
 func (p *Parser) parse(cmdl string) error {
+	fmt.Println("Команда:", cmdl)
 	words := strings.Split(cmdl, " ")
 	command := words[0]
 
@@ -57,10 +58,11 @@ func (p *Parser) parse(cmdl string) error {
 		}
 		p.uistate.BackgroundRectangle(image.Point{X: parameters[0], Y: parameters[1]}, image.Point{X: parameters[2], Y: parameters[3]})
 	case "figure":
-		parameters, err := checkForErrorsInParameters(words, 2)
+		parameters, err := checkForErrorsInParameters(words, 3)
 		if err != nil {
 			return err
 		}
+		fmt.Println("Параметри для 'figure':", parameters)
 		p.uistate.AddTFigure(image.Point{X: parameters[0], Y: parameters[1]})
 	case "move":
 		parameters, err := checkForErrorsInParameters(words, 3)
@@ -85,6 +87,7 @@ func (p *Parser) parse(cmdl string) error {
 }
 
 func checkForErrorsInParameters(words []string, expected int) ([]int, error) {
+	fmt.Println("Параметри:", words)
 	if len(words) != expected {
 		return nil, fmt.Errorf("wrong number of arguments for '%v' command", words[0])
 	}

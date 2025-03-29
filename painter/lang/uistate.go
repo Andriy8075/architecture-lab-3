@@ -1,6 +1,7 @@
 package lang
 
 import (
+	"fmt"
 	"github.com/roman-mazur/architecture-lab-3/painter"
 	"image"
 )
@@ -71,6 +72,7 @@ func (u *Uistate) BackgroundRectangle(firstPoint image.Point, secondPoint image.
 }
 
 func (u *Uistate) AddTFigure(centralPoint image.Point) {
+	fmt.Println("Додано фігуру в:", centralPoint.X, centralPoint.Y)
 	figure := painter.TFigure{
 		X: centralPoint.X,
 		Y: centralPoint.Y,
