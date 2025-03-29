@@ -1,7 +1,6 @@
 package main
 
 import (
-	"golang.org/x/exp/shiny/screen"
 	"net/http"
 
 	"github.com/roman-mazur/architecture-lab-3/painter"
@@ -18,11 +17,12 @@ func main() {
 	)
 
 	pv.Title = "Simple painter"
-	pv.OnScreenReady = func(s screen.Screen) {
-		opLoop.Start(s)
-		opLoop.Post(painter.OperationFunc(painter.WhiteFill))
-	}
+	//pv.OnScreenReady = func(s screen.Screen) {
+	//	opLoop.Start(s)
+	//	opLoop.Post(painter.OperationFunc(painter.WhiteFill))
+	//}
 
+	pv.OnScreenReady = opLoop.Start
 	opLoop.Receiver = &pv
 
 	go func() {
