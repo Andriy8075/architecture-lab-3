@@ -42,30 +42,25 @@ func GreenFill(t screen.Texture) {
 }
 
 type BgRect struct {
-	X1, Y1, X2, Y2 float32
+	FirstPoint  image.Point
+	SecondPoint image.Point
 }
 
 func (op *BgRect) Do(t screen.Texture) bool {
-	// Нормалізація координат
-	x1 := int(op.X1 * float32(t.Bounds().Dx()))
-	y1 := int(op.Y1 * float32(t.Bounds().Dy()))
-	x2 := int(op.X2 * float32(t.Bounds().Dx()))
-	y2 := int(op.Y2 * float32(t.Bounds().Dy()))
-
-	rect := image.Rect(x1, y1, x2, y2)
-	t.Fill(rect, color.Black, screen.Src)
+	c := color.Black
+	t.Fill(image.Rect(op.FirstPoint.X, op.FirstPoint.Y, op.SecondPoint.X, op.SecondPoint.Y), c, screen.Src)
 	return false
 }
 
 type TFigure struct {
-	X, Y float32
+	X, Y int
 }
 
 func (op *TFigure) Do(t screen.Texture) bool {
 	size := 200
 	thickness := 50
-	x := int(op.X * float32(t.Bounds().Dx()))
-	y := int(op.Y * float32(t.Bounds().Dy()))
+	x := op.X
+	y := op.Y
 
 	// Горизонтальна частина "Т"
 	rect1 := image.Rect(x-size/2, y-thickness/2, x+size/2, y+thickness/2)
@@ -78,18 +73,19 @@ func (op *TFigure) Do(t screen.Texture) bool {
 }
 
 type Move struct {
-	X, Y float32
+	X            int
+	Y            int
+	FiguresArray []*TFigure
 }
 
 func (op *Move) Do(t screen.Texture) bool {
-	// Для реалізації move потрібно буде зберігати стан фігур
-	// Це буде реалізовано в State
+	for i := range op.FiguresArray {
+		op.FiguresArray[i].X += op.X
+		op.FiguresArray[i].Y += op.Y
+	}
 	return false
 }
 
-type Reset struct{}
-
-func (op *Reset) Do(t screen.Texture) bool {
+func Reset(t screen.Texture) {
 	t.Fill(t.Bounds(), color.Black, screen.Src)
-	return true
 }

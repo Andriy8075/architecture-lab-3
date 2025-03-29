@@ -1,8 +1,6 @@
 package main
 
 import (
-	"golang.org/x/exp/shiny/screen"
-	"image"
 	"net/http"
 
 	"github.com/roman-mazur/architecture-lab-3/painter"
@@ -14,17 +12,12 @@ func main() {
 	var (
 		pv ui.Visualizer
 
-		state  painter.State
 		opLoop painter.Loop
 		parser lang.Parser
 	)
 
 	pv.Title = "Simple painter"
-	pv.OnScreenReady = func(s screen.Screen) {
-		state.Texture, _ = s.NewTexture(image.Pt(800, 800))
-		opLoop.Start(s)
-	}
-
+	pv.OnScreenReady = opLoop.Start
 	opLoop.Receiver = &pv
 
 	go func() {
