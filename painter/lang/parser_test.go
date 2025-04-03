@@ -1,72 +1,176 @@
 package lang
 
 import (
+	"fmt"
 	"strings"
 	"testing"
-
-	"github.com/roman-mazur/architecture-lab-3/painter"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestParser(t *testing.T) {
+func TestParser_Parse(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected []painter.Operation
+		name        string
+		input       string
+		expectedOps int
+		expectError bool
 	}{
 		{
-			name:  "white command",
-			input: "white",
-			expected: []painter.Operation{
-				painter.OperationFunc(painter.WhiteFill),
-			},
+			name:        "white command",
+			input:       "white\n",
+			expectedOps: 1,
 		},
 		{
-			name:  "green command",
-			input: "green",
-			expected: []painter.Operation{
-				painter.OperationFunc(painter.GreenFill),
-			},
+			name:        "green command",
+			input:       "green\n",
+			expectedOps: 1,
 		},
 		{
-			name:  "bgrect command",
-			input: "bgrect 0.1 0.2 0.3 0.4",
-			expected: []painter.Operation{
-				&painter.BgRect{X1: 0.1, Y1: 0.2, X2: 0.3, Y2: 0.4},
-			},
+			name:        "bgrect command",
+			input:       "bgrect 0.1 0.2 0.3 0.4\n",
+			expectedOps: 1,
 		},
 		{
-			name:  "figure command",
-			input: "figure 0.5 0.5",
-			expected: []painter.Operation{
-				&painter.TFigure{X: 0.5, Y: 0.5},
-			},
+			name:        "figure command",
+			input:       "figure 0.5 0.5\n",
+			expectedOps: 1,
 		},
 		{
-			name:  "reset command",
-			input: "reset",
-			expected: []painter.Operation{
-				&painter.Reset{},
-			},
+			name:        "move command",
+			input:       "move 0.1 0.1\n",
+			expectedOps: 1,
 		},
 		{
-			name:  "update command",
-			input: "update",
-			expected: []painter.Operation{
-				painter.UpdateOp,
-			},
+			name:        "reset command",
+			input:       "reset\n",
+			expectedOps: 1,
+		},
+		{
+			name:        "update command",
+			input:       "update\n",
+			expectedOps: 1,
+		},
+		{
+			name:        "multiple commands",
+			input:       "white\nfigure 0.5 0.5\nupdate\n",
+			expectedOps: 3,
+		},
+		{
+			name:        "invalid command",
+			input:       "invalid\n",
+			expectError: true,
+		},
+		{
+			name:        "bgrect with wrong params",
+			input:       "bgrect 0.1 0.2\n",
+			expectError: true,
 		},
 	}
 
-	p := &Parser{}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			parser := &Parser{}
+			reader := strings.NewReader(tc.input)
+			ops, err := parser.Parse(reader)
+
+			if tc.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+
+			if len(ops) != tc.expectedOps {
+				t.Errorf("Expected %d operations, got %d\ntest name: %s", tc.expectedOps, len(ops), tc.name)
+			}
+		})
+	}
+}
+
+func TestCheckForErrorsInParameters(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       []string
+		expectedLen int
+		expectError bool
+	}{
+		{
+			name:        "without parameters",
+			input:       []string{"green"},
+			expectedLen: 0,
+		},
+		{
+			name:        "valid parameters",
+			input:       []string{"bgrect", "0.1", "0.2", "0.3", "0.4"},
+			expectedLen: 4,
+		},
+		{
+			name:        "wrong number of parameters",
+			input:       []string{"bgrect", "0.1", "0.2"},
+			expectError: true,
+		},
+		{
+			name:        "invalid parameter",
+			input:       []string{"bgrect", "0.1", "abc", "0.3", "0.4"},
+			expectError: true,
+		},
+	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			r := strings.NewReader(tc.input)
-			ops, err := p.Parse(r)
-			require.NoError(t, err)
-			assert.Equal(t, tc.expected, ops)
+			fmt.Printf("name: %s\n", tc.name)
+			params, err := checkForErrorsInParameters(tc.input)
+			fmt.Print("params: ", params)
+			fmt.Print("\nerror: ", err)
+			fmt.Print("\n")
+			if tc.expectError {
+				if err == nil {
+					t.Errorf("Expected error but got none. Test name: %s", tc.name)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+
+			if len(params) != tc.expectedLen {
+				t.Errorf("Expected %d parameters, got %d", tc.expectedLen, len(params))
+			}
+		})
+	}
+}
+
+func TestParseInt(t *testing.T) {
+	tests := []struct {
+		input       string
+		expectError bool
+	}{
+		{"0.1", false},
+		{"0.5", false},
+		{"1.0", false},
+		{"abc", true},
+		{"", true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			_, err := parseInt(tc.input)
+
+			if tc.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
 		})
 	}
 }

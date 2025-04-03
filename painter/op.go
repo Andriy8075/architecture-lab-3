@@ -87,5 +87,5 @@ func (op *Move) Do(t screen.Texture) bool {
 }
 
 func Reset(t screen.Texture) {
-	t.Fill(t.Bounds(), color.Black, screen.Src)
+	t.Fill(t.Bounds(), color.White, screen.Src)
 }

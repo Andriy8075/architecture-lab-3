@@ -36,48 +36,50 @@ func (p *Parser) Parse(in io.Reader) ([]painter.Operation, error) {
 }
 
 func (p *Parser) parse(cmdl string) error {
-	fmt.Println("Команда:", cmdl) // було додано для перевірки
 	words := strings.Split(cmdl, " ")
 	command := words[0]
 
 	switch command {
 	case "white":
-		if len(words) != 1 {
-			return fmt.Errorf("wrong number of arguments for white command")
+		_, err := checkForErrorsInParameters(words)
+		if err != nil {
+			return err
 		}
 		p.uistate.WhiteBackground()
 	case "green":
-		if len(words) != 1 {
-			return fmt.Errorf("wrong number of arguments for green command")
+		_, err := checkForErrorsInParameters(words)
+		if err != nil {
+			return err
 		}
 		p.uistate.GreenBackground()
 	case "bgrect":
-		parameters, err := checkForErrorsInParameters(words, 5)
+		parameters, err := checkForErrorsInParameters(words)
 		if err != nil {
 			return err
 		}
 		p.uistate.BackgroundRectangle(image.Point{X: parameters[0], Y: parameters[1]}, image.Point{X: parameters[2], Y: parameters[3]})
 	case "figure":
-		parameters, err := checkForErrorsInParameters(words, 3)
+		parameters, err := checkForErrorsInParameters(words)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Параметри для 'figure':", parameters) // було додано для перевірки
 		p.uistate.AddTFigure(image.Point{X: parameters[0], Y: parameters[1]})
 	case "move":
-		parameters, err := checkForErrorsInParameters(words, 3)
+		parameters, err := checkForErrorsInParameters(words)
 		if err != nil {
 			return err
 		}
 		p.uistate.AddMoveOperation(parameters[0], parameters[1])
 	case "reset":
-		if len(words) != 1 {
-			return fmt.Errorf("wrong number of arguments for reset command")
+		_, err := checkForErrorsInParameters(words)
+		if err != nil {
+			return err
 		}
 		p.uistate.ResetStateAndBackground()
 	case "update":
-		if len(words) != 1 {
-			return fmt.Errorf("wrong number of arguments for update command")
+		_, err := checkForErrorsInParameters(words)
+		if err != nil {
+			return err
 		}
 		p.uistate.SetUpdateOperation()
 	default:
@@ -86,12 +88,17 @@ func (p *Parser) parse(cmdl string) error {
 	return nil
 }
 
-func checkForErrorsInParameters(words []string, expected int) ([]int, error) {
-	fmt.Println("Параметри:", words) // було додано для перевірки
-	if len(words) != expected {
-		return nil, fmt.Errorf("wrong number of arguments for '%v' command", words[0])
+func checkForErrorsInParameters(words []string) ([]int, error) {
+	if len(words) == 0 {
+		return nil, fmt.Errorf("got empty string as command")
 	}
 	var command = words[0]
+	fmt.Println(command)
+	fmt.Println(countsOfArguments[command])
+	fmt.Println(len(words))
+	if len(words) != (countsOfArguments[command] + 1) {
+		return nil, fmt.Errorf("wrong number of arguments for '%v' command", words[0])
+	}
 	var params []int
 	for _, param := range words[1:] {
 		p, err := parseInt(param)
@@ -101,6 +108,16 @@ func checkForErrorsInParameters(words []string, expected int) ([]int, error) {
 		params = append(params, p)
 	}
 	return params, nil
+}
+
+var countsOfArguments = map[string]int{
+	"white":  0,
+	"green":  0,
+	"bgrect": 4,
+	"figure": 2,
+	"move":   2,
+	"reset":  0,
+	"update": 0,
 }
 
 func parseInt(s string) (int, error) {

@@ -15,7 +15,7 @@ type Uistate struct {
 }
 
 func (u *Uistate) Reset() {
-	u.backgroundColor = nil
+	u.backgroundColor = painter.OperationFunc(painter.WhiteFill)
 	u.backgroundRectangle = nil
 	u.figuresArray = nil
 	u.moveOperations = nil
@@ -48,9 +48,6 @@ func (u *Uistate) GetOperations() []painter.Operation {
 }
 
 func (u *Uistate) ResetOperations() {
-	if u.backgroundColor == nil {
-		u.backgroundColor = painter.OperationFunc(painter.Reset)
-	}
 	if u.updateOperation != nil {
 		u.updateOperation = nil
 	}
@@ -87,7 +84,6 @@ func (u *Uistate) AddMoveOperation(x int, y int) {
 
 func (u *Uistate) ResetStateAndBackground() {
 	u.Reset()
-	u.backgroundColor = painter.OperationFunc(painter.Reset)
 }
 
 func (u *Uistate) SetUpdateOperation() {
