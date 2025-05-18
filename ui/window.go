@@ -154,8 +154,6 @@ func (pw *Visualizer) drawTAt(x, y float64) {
 		int(x)+thickness/2, int(y)+size/2,
 	)
 	pw.w.Fill(rect2, color.RGBA{B: 0xff, A: 0xff}, draw.Src)
-
-	pw.w.Publish()
 }
 
 func (pw *Visualizer) drawDefaultUI() {
